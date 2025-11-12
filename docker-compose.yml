@@ -1,10 +1,8 @@
-version: '3'
-
 services:
-  spark-master:
-    image: spark-image 
+  spark-master: # spark master
+    image: spark-image
     container_name: spark-master
-    entrypoint: ['./entrypoint.sh', 'master']
+    entrypoint: ['./entrypoint.sh', 'master'] # overrides the ENTRYPOINT from Dockerfile
     build:
       context: ./data-processing-spark/1-lab-setup/containers/spark
       dockerfile: Dockerfile 
@@ -17,6 +15,7 @@ services:
       - ./capstone:/opt/spark/work-dir/capstone
       - ./data-processing-spark:/opt/spark/work-dir/data-processing-spark
       - ./etl:/opt/spark/work-dir/etl
+      - ./sample_jupyter_spark_nb.ipynb:/opt/spark/work-dir/sample_jupyter_spark_nb.ipynb
       - spark-logs:/opt/spark/spark-events
       - tpch-data:/opt/spark/tpch-dbgen
     environment:
@@ -29,7 +28,7 @@ services:
     env_file:
       - .env.spark
   
-  spark-history-server:
+  spark-history-server: # history server
     container_name: spark-history
     image: spark-image
     entrypoint: ['./entrypoint.sh', 'history']
@@ -42,7 +41,7 @@ services:
     ports:
       - '18080:18080'
   
-  spark-worker:
+  spark-worker: # spark worker
     image: spark-image
     entrypoint: ['./entrypoint.sh', 'worker']
     volumes:
@@ -61,7 +60,19 @@ services:
       UPSTREAM_PASSWORD: sdepassword
       UPSTREAM_DATABASE: upstreamdb
  
-  minio:
+  upstream: # simulate an upstream application database
+    image: postgres:16
+    container_name: upstream
+    environment:
+      POSTGRES_USER: sdeuser
+      POSTGRES_PASSWORD: sdepassword
+      POSTGRES_DB: upstreamdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data-processing-spark/1-lab-setup/containers/upstream/1-upstream-data.sql:/docker-entrypoint-initdb.d/init.sql # run script when container starts 
+
+  minio: # object storage compatible with the AWS S3
     image: 'minio/minio:RELEASE.2023-07-21T21-12-44Z'
     hostname: minio
     container_name: minio
@@ -73,25 +84,14 @@ services:
       MINIO_SECRET_KEY: minio123
     command: server --console-address ":9001" /data
 
-  upstream:
-    image: postgres:15
-    container_name: upstream
-    environment:
-      POSTGRES_USER: sdeuser
-      POSTGRES_PASSWORD: sdepassword
-      POSTGRES_DB: upstreamdb
-    ports:
-      - "5432:5432"
-    volumes:
-      - ./data-processing-spark/1-lab-setup/containers/upstream/1-upstream-data.sql:/docker-entrypoint-initdb.d/init.sql
-
-  createbuckets:
+  create-buckets: # creates the necessary folders in minio
     image: minio/mc
-    container_name: createbuckets
+    container_name: create-buckets
+    platform: linux/amd64 # compatible with the host's os architecture
     depends_on:
       - minio
     entrypoint: >
-      /bin/sh -c " /usr/bin/mc config host add myminio http://minio:9000 minio minio123; /usr/bin/mc rm -r --force myminio/tpch; /usr/bin/mc mb myminio/tpch; /usr/bin/mc policy download myminio/tpch; /usr/bin/mc rm -r --force myminio/rainforest; /usr/bin/mc mb myminio/rainforest; /usr/bin/mc policy download myminio/rainforest; exit 0; "
+      /bin/sh -c " /usr/bin/mc alias set myminio http://minio:9000 minio minio123; /usr/bin/mc rm -r --force myminio/tpch; /usr/bin/mc mb myminio/tpch; /usr/bin/mc anonymous set download myminio/tpch; /usr/bin/mc rm -r --force myminio/rainforest; /usr/bin/mc mb myminio/rainforest; /usr/bin/mc anonymous set download myminio/rainforest; exit 0; "
 
 
 volumes:

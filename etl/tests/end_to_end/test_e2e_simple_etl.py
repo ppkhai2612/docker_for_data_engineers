@@ -1,8 +1,11 @@
+from unittest.mock import patch
+
 import pytest
 from pyspark.sql import Row
 from pyspark.sql.functions import col
-from unittest.mock import patch
-from etl.simple_etl import run_code
+
+from etl.simple_etl import run_pipeline
+
 
 # Create a DataFrame to be returned by the mock
 @pytest.fixture
@@ -16,7 +19,7 @@ def fake_data(spark):
     ]
     return spark.createDataFrame(data)
 
-# Test function to check if run_code works as expected
+# test function to check if run_code works as expected
 def test_run_code(spark, fake_data):
     # Mock the get_upstream_table function to return the fake_data
     with patch('etl.simple_etl.get_upstream_table', return_value=fake_data):
@@ -28,7 +31,7 @@ def test_run_code(spark, fake_data):
         ]
         
         # Run the code end to end
-        result_data = run_code(spark)
+        result_data = run_pipeline(spark)
         
         # Convert result_data to a DataFrame to make it comparable
         result_df = spark.createDataFrame(result_data)
@@ -39,4 +42,3 @@ def test_run_code(spark, fake_data):
 
         # Assert that the transformed data is as expected
         assert result_sorted.collect() == expected_df.collect(), "The transformed data does not match expected output"
-

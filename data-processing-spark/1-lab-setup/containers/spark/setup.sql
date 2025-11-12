@@ -1,7 +1,8 @@
+-- create and use schema
 CREATE SCHEMA IF NOT EXISTS tpch;
-
 USE tpch;
 
+-- create customer table (drop if it already exists)
 DROP TABLE IF EXISTS customer;
 
 CREATE TABLE customer (
@@ -18,6 +19,7 @@ LOCATION 's3a://tpch/customer';
 
 LOAD DATA LOCAL INPATH '/opt/spark/work-dir/tpch-dbgen/customer.tbl' OVERWRITE INTO TABLE customer;
 
+-- create lineitem table (drop if it already exists)
 DROP TABLE IF EXISTS lineitem;
 
 CREATE TABLE lineitem (
@@ -41,6 +43,7 @@ CREATE TABLE lineitem (
 
 LOAD DATA LOCAL INPATH '/opt/spark/work-dir/tpch-dbgen/lineitem.tbl' OVERWRITE INTO TABLE lineitem;
 
+-- create nation table (drop if it already exists)
 DROP TABLE IF EXISTS nation;
 
 CREATE TABLE nation (
@@ -52,6 +55,7 @@ CREATE TABLE nation (
 
 LOAD DATA LOCAL INPATH '/opt/spark/work-dir/tpch-dbgen/nation.tbl' OVERWRITE INTO TABLE nation;
 
+-- create orders table (drop if it already exists)
 DROP TABLE IF EXISTS orders;
 
 CREATE TABLE orders (
@@ -68,6 +72,7 @@ CREATE TABLE orders (
 
 LOAD DATA LOCAL INPATH '/opt/spark/work-dir/tpch-dbgen/orders.tbl' OVERWRITE INTO TABLE orders;
 
+-- create part table (drop if it already exists)
 DROP TABLE IF EXISTS part;
 
 CREATE TABLE part (
@@ -84,6 +89,7 @@ CREATE TABLE part (
 
 LOAD DATA LOCAL INPATH '/opt/spark/work-dir/tpch-dbgen/part.tbl' OVERWRITE INTO TABLE part;
 
+-- create partsupp table (drop if it already exists)
 DROP TABLE IF EXISTS partsupp;
 
 CREATE TABLE partsupp (
@@ -96,6 +102,7 @@ CREATE TABLE partsupp (
 
 LOAD DATA LOCAL INPATH '/opt/spark/work-dir/tpch-dbgen/partsupp.tbl' OVERWRITE INTO TABLE partsupp;
 
+-- create region table (drop if it already exists)
 DROP TABLE IF EXISTS region;
 
 CREATE TABLE region (
@@ -106,6 +113,7 @@ CREATE TABLE region (
 
 LOAD DATA LOCAL INPATH '/opt/spark/work-dir/tpch-dbgen/region.tbl' OVERWRITE INTO TABLE region;
 
+-- create supplier table (drop if it already exists)
 DROP TABLE IF EXISTS supplier;
 
 CREATE TABLE supplier (

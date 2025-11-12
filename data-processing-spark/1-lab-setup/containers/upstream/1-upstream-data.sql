@@ -1,5 +1,7 @@
-CREATE SCHEMA IF NOT EXISTS rainforest;
+-- this script create schema and tables
 
+-- create and use rainforest schema 
+CREATE SCHEMA IF NOT EXISTS rainforest;
 SET search_path TO rainforest;
 
 -- Create AppUser table
@@ -9,7 +11,7 @@ CREATE TABLE AppUser (
     email VARCHAR(255) NOT NULL,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    last_updated_by INT ,
+    last_updated_by INT,
     last_updated_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -42,29 +44,6 @@ CREATE TABLE Manufacturer (
     last_updated_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create Product table
-CREATE TABLE Product (
-    product_id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
-    price DECIMAL(10, 2) NOT NULL,
-    brand_id INT REFERENCES Brand(brand_id),
-    manufacturer_id INT REFERENCES Manufacturer(manufacturer_id),
-    created_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    last_updated_by INT REFERENCES AppUser(user_id),
-    last_updated_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Create Ratings table
-CREATE TABLE Ratings (
-    ratings_id SERIAL PRIMARY KEY,
-    product_id INT REFERENCES Product(product_id),
-    rating DECIMAL(3, 2),
-    created_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    last_updated_by INT REFERENCES AppUser(user_id),
-    last_updated_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
 -- Create Seller table
 CREATE TABLE Seller (
     seller_id SERIAL PRIMARY KEY,
@@ -85,8 +64,50 @@ CREATE TABLE Buyer (
     last_updated_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Create Product table
+CREATE TABLE Product (
+    product_id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    price DECIMAL(10, 2) NOT NULL,
+    brand_id INT REFERENCES Brand(brand_id),
+    manufacturer_id INT REFERENCES Manufacturer(manufacturer_id),
+    created_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_updated_by INT REFERENCES AppUser(user_id),
+    last_updated_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create ProductCategory table
+CREATE TABLE ProductCategory (
+    product_id INTEGER,
+    category_id INTEGER,
+    PRIMARY KEY (product_id, category_id),
+    FOREIGN KEY (product_id) REFERENCES Product(product_id),
+    FOREIGN KEY (category_id) REFERENCES Category(category_id),
+    created_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_updated_by INT REFERENCES AppUser(user_id),
+    last_updated_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create Ratings table
+CREATE TABLE Ratings (
+    ratings_id SERIAL PRIMARY KEY,
+    product_id INT REFERENCES Product(product_id),
+    rating DECIMAL(3, 2),
+    created_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_updated_by INT REFERENCES AppUser(user_id),
+    last_updated_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create SellerProduct table
+CREATE TABLE SellerProduct (
+    seller_id INT REFERENCES Seller(seller_id) ON DELETE CASCADE,
+    product_id INT REFERENCES Product(product_id) ON DELETE CASCADE,
+    PRIMARY KEY (seller_id, product_id)
+);
+
 -- Create Order table
-CREATE TABLE orders (
+CREATE TABLE Orders (
     order_id SERIAL PRIMARY KEY,
     buyer_id INT REFERENCES Buyer(buyer_id) ON DELETE CASCADE,
     order_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -97,7 +118,7 @@ CREATE TABLE orders (
 -- Create OrderItem table
 CREATE TABLE OrderItem (
     order_item_id SERIAL PRIMARY KEY,
-    order_id INT REFERENCES orders(order_id) ON DELETE CASCADE,
+    order_id INT REFERENCES Orders(order_id) ON DELETE CASCADE,
     product_id INT REFERENCES Product(product_id) ON DELETE CASCADE,
     seller_id INT REFERENCES Seller(seller_id) ON DELETE CASCADE,
     quantity INT NOT NULL,
@@ -106,31 +127,13 @@ CREATE TABLE OrderItem (
     created_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create SellerProduct table
-CREATE TABLE SellerProduct (
-    seller_id INT REFERENCES Seller(seller_id) ON DELETE CASCADE,
-    product_id INT REFERENCES Product(product_id) ON DELETE CASCADE,
-    PRIMARY KEY (seller_id, product_id)
-);
-
 -- Create Clickstream table
 CREATE TABLE Clickstream (
     event_id SERIAL PRIMARY KEY,
     user_id INT REFERENCES AppUser(user_id) ON DELETE CASCADE,
     event_type VARCHAR(20) NOT NULL,
     product_id INT REFERENCES Product(product_id),
-    order_id INT REFERENCES orders(order_id),
+    order_id INT REFERENCES Orders(order_id),
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE ProductCategory (
-    product_id INTEGER,
-    category_id INTEGER,
-    PRIMARY KEY (product_id, category_id),
-    FOREIGN KEY (product_id) REFERENCES Product(product_id),
-    FOREIGN KEY (category_id) REFERENCES Category(category_id),
-    created_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    last_updated_by INT REFERENCES AppUser(user_id),
-    last_updated_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

@@ -1,29 +1,15 @@
+# this script generates fake data for tables in Postgres
+
 import random
 
 import psycopg2
-from faker import Faker
 from psycopg2.extras import execute_values
-
-# Connect to PostgreSQL database
-conn = psycopg2.connect(
-    dbname="upstreamdb",
-    user="sdeuser",
-    password="sdepassword",
-    host="upstream",
-    port="5432",
-)
-cur = conn.cursor()
-# Set the search path to the rainforest schema
-cur.execute("SET search_path TO rainforest")
-
-# Commit the transaction to apply changes
-conn.commit()
-
-# Initialize Faker instance
-fake = Faker()
+from faker import Faker
 
 
-# Function to generate fake user data
+# FUNCTION DEFINITIONS
+
+# generate fake user data
 def generate_user_data(num_users):
     users = []
     for u_num in range(num_users):
@@ -46,7 +32,7 @@ def generate_user_data(num_users):
     return users
 
 
-# Function to generate fake seller data
+# generate fake seller data
 def generate_seller_data(user_ids):
     sellers = []
     for user_id in user_ids:
@@ -68,7 +54,7 @@ def generate_seller_data(user_ids):
     return sellers
 
 
-# Function to generate fake buyer data
+# generate fake buyer data
 def generate_buyer_data(user_ids):
     buyers = []
     for user_id in user_ids:
@@ -90,7 +76,30 @@ def generate_buyer_data(user_ids):
     return buyers
 
 
-# Function to generate fake product data
+# generate fake manufacturer data
+def generate_manufacturer_data(num_manufacturers, user_ids):
+    manufacturer_data = []
+    for _ in range(num_manufacturers):
+        manufacturer_name = fake.company()
+        manufacturer_type = fake.word()
+        created_ts = fake.date_time_between(start_date='-1y', end_date='now')
+        last_updated_by = random.choice(user_ids)
+        last_updated_ts = fake.date_time_between(
+            start_date=created_ts, end_date='now'
+        )
+        manufacturer_data.append(
+            (
+                manufacturer_name,
+                manufacturer_type,
+                created_ts,
+                last_updated_by,
+                last_updated_ts,
+            )
+        )
+    return manufacturer_data
+
+
+# generate fake product data
 def generate_product_data(num_products, user_ids):
     products = []
     for _ in range(num_products):
@@ -113,17 +122,17 @@ def generate_product_data(num_products, user_ids):
     return products
 
 
-# Function to generate fake seller_product data
-def generate_seller_product_data(seller_ids, product_ids):
-    seller_products = []
-    for seller_id in seller_ids:
-        products = random.sample(product_ids, random.randint(1, 10))
-        for product_id in products:
-            seller_products.append((seller_id, product_id))
-    return seller_products
+# generate fake product category data
+def generate_product_category_data(product_ids, category_ids):
+    product_categories = []
+    for product_id in product_ids:
+        categories = random.sample(category_ids, random.randint(1, 3))
+        for category_id in categories:
+            product_categories.append((product_id, category_id))
+    return product_categories
 
 
-# Function to generate fake category data
+# generate fake category data
 def generate_category_data(num_categories, user_ids):
     categories = []
     for _ in range(num_categories):
@@ -135,17 +144,34 @@ def generate_category_data(num_categories, user_ids):
     return categories
 
 
-# Function to generate fake product_category data
-def generate_product_category_data(product_ids, category_ids):
-    product_categories = []
-    for product_id in product_ids:
-        categories = random.sample(category_ids, random.randint(1, 3))
-        for category_id in categories:
-            product_categories.append((product_id, category_id))
-    return product_categories
+# generate fake rating data
+def generate_ratings_data(num_ratings, product_ids, user_ids):
+    ratings_data = []
+    for _ in range(num_ratings):
+        product_id = random.choice(product_ids)
+        rating = round(random.uniform(0, 5), 2)
+        created_ts = fake.date_time_between(start_date='-1y', end_date='now')
+        last_updated_by = random.choice(user_ids)
+        last_updated_ts = fake.date_time_between(
+            start_date=created_ts, end_date='now'
+        )
+        ratings_data.append(
+            (product_id, rating, created_ts, last_updated_by, last_updated_ts)
+        )
+    return ratings_data
 
 
-# Function to generate fake order data
+# generate fake seller product data
+def generate_seller_product_data(seller_ids, product_ids):
+    seller_products = []
+    for seller_id in seller_ids:
+        products = random.sample(product_ids, random.randint(1, 10))
+        for product_id in products:
+            seller_products.append((seller_id, product_id))
+    return seller_products
+
+
+# generate fake order data
 def generate_order_data(buyer_ids, num_orders, user_ids):
     orders = []
     for _ in range(num_orders):
@@ -157,7 +183,7 @@ def generate_order_data(buyer_ids, num_orders, user_ids):
     return orders
 
 
-# Function to generate fake order_item data
+# generate fake order item data
 def generate_order_item_data(order_ids, seller_ids, product_ids, user_ids):
     order_items = []
     for order_id in order_ids:
@@ -181,7 +207,24 @@ def generate_order_item_data(order_ids, seller_ids, product_ids, user_ids):
     return order_items
 
 
-# Function to generate fake clickstream data
+# generate fake brand data
+def generate_brand_data(num_brands, user_ids):
+    brand_data = []
+    for _ in range(num_brands):
+        brand_name = fake.company()
+        country = fake.country()
+        created_ts = fake.date_time_between(start_date='-1y', end_date='now')
+        last_updated_by = random.choice(user_ids)
+        last_updated_ts = fake.date_time_between(
+            start_date=created_ts, end_date='now'
+        )
+        brand_data.append(
+            (brand_name, country, created_ts, last_updated_by, last_updated_ts)
+        )
+    return brand_data
+
+
+# generate fake clickstream data
 def generate_clickstream_data(user_ids, product_ids, order_ids):
     clickstreams = []
     for user_id in user_ids:
@@ -213,171 +256,110 @@ def generate_clickstream_data(user_ids, product_ids, order_ids):
     return clickstreams
 
 
-def generate_brand_data(num_brands, user_ids):
-    """
-    Generate fake data for the Brand table.
-    """
-    brand_data = []
-    for _ in range(num_brands):
-        brand_name = fake.company()
-        country = fake.country()
-        created_ts = fake.date_time_between(start_date='-1y', end_date='now')
-        last_updated_by = random.choice(user_ids)
-        last_updated_ts = fake.date_time_between(
-            start_date=created_ts, end_date='now'
-        )
-        brand_data.append(
-            (brand_name, country, created_ts, last_updated_by, last_updated_ts)
-        )
-    return brand_data
+# SET UP THE CONNECTION
 
+conn = psycopg2.connect( # connect to PostgreSQL database
+    dbname="upstreamdb",
+    user="sdeuser",
+    password="sdepassword",
+    host="upstream",
+    port="5432",
+)
+cur = conn.cursor()
 
-def generate_manufacturer_data(num_manufacturers, user_ids):
-    """
-    Generate fake data for the Manufacturer table.
-    """
-    manufacturer_data = []
-    for _ in range(num_manufacturers):
-        manufacturer_name = fake.company()
-        manufacturer_type = fake.word()
-        created_ts = fake.date_time_between(start_date='-1y', end_date='now')
-        last_updated_by = random.choice(user_ids)
-        last_updated_ts = fake.date_time_between(
-            start_date=created_ts, end_date='now'
-        )
-        manufacturer_data.append(
-            (
-                manufacturer_name,
-                manufacturer_type,
-                created_ts,
-                last_updated_by,
-                last_updated_ts,
-            )
-        )
-    return manufacturer_data
+# set the search path to the rainforest schema
+cur.execute("SET search_path TO rainforest")
 
+# commit the transaction to apply changes
+conn.commit()
 
-def generate_ratings_data(num_ratings, product_ids, user_ids):
-    """
-    Generate fake data for the Ratings table.
-    """
-    ratings_data = []
-    for _ in range(num_ratings):
-        product_id = random.choice(product_ids)
-        rating = round(random.uniform(0, 5), 2)
-        created_ts = fake.date_time_between(start_date='-1y', end_date='now')
-        last_updated_by = random.choice(user_ids)
-        last_updated_ts = fake.date_time_between(
-            start_date=created_ts, end_date='now'
-        )
-        ratings_data.append(
-            (product_id, rating, created_ts, last_updated_by, last_updated_ts)
-        )
-    return ratings_data
+# initialize Faker instance
+fake = Faker()
 
+# GENERATE AND INSERT DATA INTO TABLES
 
-# Generate and insert data into tables
+# generate and insert user data into AppUser table
 num_users = 1000
-num_products = 500
-
-# Generate and insert user data
 user_data = generate_user_data(num_users)
-insert_query = (
+insert_command = (
     'INSERT INTO AppUser (username, email, is_active, created_ts,'
     ' last_updated_by, last_updated_ts) VALUES %s'
 )
-execute_values(cur, insert_query, user_data)
+execute_values(cur, insert_command, user_data)
 conn.commit()
 
-# Get user IDs for other tables
+# get user ids
 cur.execute('SELECT user_id FROM AppUser')
 user_ids = [row[0] for row in cur.fetchall()]
 
-num_brands = 50
-brand_data = generate_brand_data(num_brands, user_ids)
-insert_query = (
-    'INSERT INTO Brand (name, country, created_ts, last_updated_by,'
-    ' last_updated_ts) VALUES %s'
-)
-execute_values(cur, insert_query, brand_data)
-conn.commit()
 
-num_manufacturers = 50
-manufacturer_data = generate_manufacturer_data(num_manufacturers, user_ids)
-insert_query = (
-    'INSERT INTO Manufacturer (name, type, created_ts, last_updated_by,'
-    ' last_updated_ts) VALUES %s'
-)
-execute_values(cur, insert_query, manufacturer_data)
-conn.commit()
-
-
-# Generate and insert seller data
+# generate and insert seller data into Seller table
 seller_data = generate_seller_data(user_ids)
-insert_query = (
+insert_command = (
     "INSERT INTO Seller (user_id, first_time_sold_timestamp, created_ts,"
     " last_updated_by, last_updated_ts) VALUES %s"
 )
-execute_values(cur, insert_query, seller_data)
+execute_values(cur, insert_command, seller_data)
 conn.commit()
 
-# Generate and insert buyer data
+
+# generate and insert buyer data into Buyer table
 buyer_data = generate_buyer_data(user_ids)
-insert_query = (
+insert_command = (
     "INSERT INTO Buyer (user_id, first_time_purchased_timestamp, created_ts,"
     " last_updated_by, last_updated_ts) VALUES %s"
 )
-execute_values(cur, insert_query, buyer_data)
+execute_values(cur, insert_command, buyer_data)
 conn.commit()
 
-# Generate and insert product data
+# get seller ids and buyer ids
+cur.execute("SELECT seller_id FROM Seller")
+seller_ids = [row[0] for row in cur.fetchall()]
+cur.execute("SELECT buyer_id FROM Buyer")
+buyer_ids = [row[0] for row in cur.fetchall()]
+
+
+# generate and insert manufacturer data into Manufacturer table
+num_manufacturers = 50
+manufacturer_data = generate_manufacturer_data(num_manufacturers, user_ids)
+insert_command = (
+    'INSERT INTO Manufacturer (name, type, created_ts, last_updated_by,'
+    ' last_updated_ts) VALUES %s'
+)
+execute_values(cur, insert_command, manufacturer_data)
+conn.commit()
+
+
+# generate and insert product data into Product table
+num_products = 500
 product_data = generate_product_data(num_products, user_ids)
-insert_query = (
+insert_command = (
     "INSERT INTO Product (name, description, price, created_ts,"
     " last_updated_by, last_updated_ts) VALUES %s"
 )
-execute_values(cur, insert_query, product_data)
+execute_values(cur, insert_command, product_data)
 conn.commit()
 
 
-# Get seller IDs and product IDs for other tables
-cur.execute("SELECT seller_id FROM Seller")
-seller_ids = [row[0] for row in cur.fetchall()]
-cur.execute("SELECT product_id FROM Product")
-product_ids = [row[0] for row in cur.fetchall()]
-
-# Assuming you have product_ids and user_ids generated
-# for the products and users
-num_ratings = 1000  # Example: generate 1000 ratings
-ratings_data = generate_ratings_data(num_ratings, product_ids, user_ids)
-insert_query = (
-    "INSERT INTO Ratings (product_id, rating, created_ts, last_updated_by,"
-    " last_updated_ts) VALUES %s"
-)
-execute_values(cur, insert_query, ratings_data)
-conn.commit()
-
-# Generate and insert seller_product data
-seller_product_data = generate_seller_product_data(seller_ids, product_ids)
-insert_query = "INSERT INTO SellerProduct (seller_id, product_id) VALUES %s"
-execute_values(cur, insert_query, seller_product_data)
-conn.commit()
-
-# Generate and insert category data
+# generate and insert category data into Category table
 num_categories = 20
 category_data = generate_category_data(num_categories, user_ids)
-insert_query = (
+insert_command = (
     "INSERT INTO Category (name, created_ts, last_updated_by, last_updated_ts)"
     " VALUES %s"
 )
-execute_values(cur, insert_query, category_data)
+execute_values(cur, insert_command, category_data)
 conn.commit()
 
-# Get category IDs for product_category table
+
+# get product ids and category ids
+cur.execute("SELECT product_id FROM Product")
+product_ids = [row[0] for row in cur.fetchall()]
 cur.execute("SELECT category_id FROM Category")
 category_ids = [row[0] for row in cur.fetchall()]
 
-# Generate and insert product_category data
+
+# generate and insert product category data into ProductCategory table
 product_category_data = generate_product_category_data(
     product_ids, category_ids
 )
@@ -387,25 +369,52 @@ insert_query = (
 execute_values(cur, insert_query, product_category_data)
 conn.commit()
 
-# Get buyer IDs for order table
-cur.execute("SELECT buyer_id FROM Buyer")
-buyer_ids = [row[0] for row in cur.fetchall()]
 
-# Generate and insert order data
+# generate and insert rating data into Ratings table
+num_ratings = 1000
+ratings_data = generate_ratings_data(num_ratings, product_ids, user_ids)
+insert_query = (
+    "INSERT INTO Ratings (product_id, rating, created_ts, last_updated_by,"
+    " last_updated_ts) VALUES %s"
+)
+execute_values(cur, insert_query, ratings_data)
+conn.commit()
+
+
+# generate and insert seller product data into SellerProduct table
+seller_product_data = generate_seller_product_data(seller_ids, product_ids)
+insert_query = "INSERT INTO SellerProduct (seller_id, product_id) VALUES %s"
+execute_values(cur, insert_query, seller_product_data)
+conn.commit()
+
+
+# generate and insert brand data into Brand table
+num_brands = 50
+brand_data = generate_brand_data(num_brands, user_ids)
+insert_command = (
+    'INSERT INTO Brand (name, country, created_ts, last_updated_by,'
+    ' last_updated_ts) VALUES %s'
+)
+execute_values(cur, insert_command, brand_data)
+conn.commit()
+
+
+# generate and insert order data into Orders table
 num_orders = 5000
 order_data = generate_order_data(buyer_ids, num_orders, user_ids)
 insert_query = (
-    'INSERT INTO orders (buyer_id, order_ts, total_price, created_ts)'
+    'INSERT INTO Orders (buyer_id, order_ts, total_price, created_ts)'
     ' VALUES %s'
 )
 execute_values(cur, insert_query, order_data)
 conn.commit()
 
-# Get order IDs for order_item table
+# get order ids
 cur.execute('SELECT order_id FROM orders')
 order_ids = [row[0] for row in cur.fetchall()]
 
-# Generate and insert order_item data
+
+# generate and insert order item data into OrderItem table
 order_item_data = generate_order_item_data(
     order_ids, seller_ids, product_ids, user_ids
 )
@@ -416,11 +425,8 @@ insert_query = (
 execute_values(cur, insert_query, order_item_data)
 conn.commit()
 
-# Get user IDs for clickstream table
-cur.execute('SELECT user_id FROM AppUser')
-user_ids = [row[0] for row in cur.fetchall()]
 
-# Generate and insert clickstream data
+# generate and insert clickstream data into Clickstream table
 clickstream_data = generate_clickstream_data(user_ids, product_ids, order_ids)
 insert_query = (
     "INSERT INTO Clickstream (user_id, event_type, product_id, order_id,"
@@ -429,9 +435,6 @@ insert_query = (
 execute_values(cur, insert_query, clickstream_data)
 conn.commit()
 
-# Close database connection
-cur.close()
-conn.close()
 
 # Close database connection
 cur.close()
