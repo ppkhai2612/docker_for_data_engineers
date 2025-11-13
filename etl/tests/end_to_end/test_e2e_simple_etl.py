@@ -19,6 +19,7 @@ def fake_data(spark):
     ]
     return spark.createDataFrame(data)
 
+
 # test function to check if run_code works as expected
 def test_run_code(spark, fake_data):
     # Mock the get_upstream_table function to return the fake_data

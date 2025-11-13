@@ -88,4 +88,5 @@ docker exec spark-master spark-submit --master spark://spark-master:7077 --deplo
 docker exec spark-master bash -c 'python3 -m pytest --log-cli-level info -p no:warnings -v /opt/spark/work-dir/etl/tests'
 ```
 
-If you want to learn more about testing, see [How to test PySpark code with pytest](https://www.startdataengineering.com/post/test-pyspark/)
+If you want to learn more about testing, see [here](docs/testing/README.md)
+
